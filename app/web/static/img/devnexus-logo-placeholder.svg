@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PLACEHOLDER - NOT THE OFFICIAL DEVNEXUS LOGO.
+  The selected green geometric DevNexus mark was not available as a file when the project was scaffolded.
+  This is a simple green isometric-cube stand-in. Replace by dropping the real asset at
+  app/web/static/img/devnexus-logo.svg and updating LOGO_SRC in app/web/templates/base.html.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DevNexus (placeholder logo)">
+  <polygon points="32,4 56,18 32,32 8,18" fill="#4ade80"/>
+  <polygon points="32,32 56,18 56,46 32,60" fill="#15803d"/>
+  <polygon points="32,32 8,18 8,46 32,60" fill="#16a34a"/>
+  <polygon points="32,20 44,27 32,34 20,27" fill="#f0fdf4" opacity="0.9"/>
+</svg>

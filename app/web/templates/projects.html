@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head"><div><h1>Projects</h1><small>FR-1: a Project Manager defines the problem statement, scope and objectives.</small></div></div>
+<section class="card" id="create-project-card" hidden>
+  <h2>New project</h2>
+  <form id="project-form" class="form-grid">
+    <label class="field full">Name<input name="name" required maxlength="120" placeholder="e.g. Student Portal"></label>
+    <label class="field full">Problem statement<textarea name="problem_statement" required rows="2" maxlength="2000"></textarea></label>
+    <label class="field">Scope<textarea name="scope" required rows="2" maxlength="2000"></textarea></label>
+    <label class="field">Objectives<textarea name="objectives" required rows="2" maxlength="2000"></textarea></label>
+    <label class="field">Start date <span class="hint">(optional)</span><input type="date" name="start_date"></label>
+    <label class="field">End date <span class="hint">(optional, used for schedule-slippage risk)</span><input type="date" name="end_date"></label>
+    <div class="full"><button type="submit">Create project</button></div>
+  </form>
+</section>
+<div class="notice" id="dev-note" hidden>Only a Project Manager can create projects. Switch the user at the top to try it.</div>
+<section class="card"><h2>All projects</h2><div id="project-list" class="table-wrap"></div></section>
+{% endblock %}

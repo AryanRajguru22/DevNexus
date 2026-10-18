@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} · DevNexus</title>
+  {# Placeholder logo: swap LOGO_SRC for the real asset once it is added to static/img/. #}
+  {% set LOGO_SRC = url_for('static', path='img/devnexus-logo-placeholder.svg') %}
+  <link rel="icon" type="image/svg+xml" href="{{ LOGO_SRC }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+</head>
+<body data-page="{{ nav }}"{% if project_id is defined %} data-project-id="{{ project_id }}"{% endif %}{% if task_id is defined %} data-task-id="{{ task_id }}"{% endif %}>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="DevNexus home">
+      <img src="{{ LOGO_SRC }}" alt="" width="34" height="34">
+      <span class="brand-text"><strong>DevNexus</strong><small>ASDPIP</small></span>
+    </a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="nav" id="nav" aria-label="Main">
+      <a href="/" class="{{ 'active' if nav == 'dashboard' }}">Dashboard</a>
+      <a href="/projects" class="{{ 'active' if nav == 'projects' }}">Projects</a>
+      <a href="/reports" class="{{ 'active' if nav == 'reports' }}">Reports</a>
+      <a href="/audit" class="{{ 'active' if nav == 'audit' }}">Audit trail</a>
+      <a href="/notifications" class="{{ 'active' if nav == 'notifications' }}">Notifications <span id="bell" class="bell" hidden>0</span></a>
+    </nav>
+    <label class="user-switch">
+      <span>Acting as</span>
+      <select id="user-select" aria-label="Acting user"></select>
+    </label>
+  </header>
+  <div class="demo-banner" role="note">
+    Demo mode · AI agents, Git host and CI/CD runner are local mock adapters; test results and coverage are simulated static checks.
+  </div>
+  <main class="container">
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">DevNexus · AI-Assisted Software Development &amp; Project Intelligence Platform · Academic project ASDPIP (CSE3132)</footer>
+  <script src="{{ url_for('static', path='js/app.js') }}"></script>
+</body>
+</html>

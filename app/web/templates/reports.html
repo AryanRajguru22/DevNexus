@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Estimation &amp; risk reports</h1><small>FR-10 and FR-11. Formulas and constants come from the Phase 2 estimation document.</small></div>
+  <label class="field inline">Project <select id="project-filter" aria-label="Project filter"></select></label>
+</div>
+<section class="card"><h2>Estimation (FR-10)</h2><div id="estimation"></div></section>
+<section class="card">
+  <div class="row spread"><h2>Risk report (FR-11)</h2><button id="gen-risk" hidden>Generate risk report</button></div>
+  <div id="risk-live"></div>
+  <h3>Latest stored report</h3><div id="risk-stored"></div>
+</section>
+{% endblock %}

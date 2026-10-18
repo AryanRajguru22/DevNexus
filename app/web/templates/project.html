@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head"><div><a href="/projects">← Projects</a><h1 id="project-title">Project</h1><small id="project-sub"></small></div></div>
+<section class="card"><h2>Problem, scope and objectives</h2><div id="project-info"></div></section>
+
+<section class="card">
+  <h2>Requirements (FR-2)</h2>
+  <div id="req-table" class="table-wrap"></div>
+  <form id="req-form" class="form-grid" hidden>
+    <h3 class="full">Add a requirement</h3>
+    <label class="field full">Description<textarea name="description" required minlength="5" maxlength="2000" rows="2" placeholder="The system shall…"></textarea></label>
+    <label class="field">Type<select name="type"><option value="functional">functional</option><option value="non-functional">non-functional</option></select></label>
+    <label class="field">Priority<select name="priority"><option>High</option><option selected>Medium</option><option>Low</option></select></label>
+    <label class="field">Status<select name="status"><option>Draft</option><option>Approved</option></select></label>
+    <div class="full"><button type="submit">Add requirement</button></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Agent pipeline (FR-3)</h2>
+  <form id="pipeline-form" class="form-grid">
+    <div class="field full"><span>Active agents</span>
+      <div class="checks" id="agent-checks">
+        <label><input type="checkbox" name="agent" value="code_generation"> Code generation</label>
+        <label><input type="checkbox" name="agent" value="testing"> Testing</label>
+        <label><input type="checkbox" name="agent" value="deployment"> Deployment</label>
+      </div>
+    </div>
+    <label class="field">Retry limit <span class="hint">rework / retry attempts per task (0–10)</span><input type="number" name="retry_limit" min="0" max="10" required></label>
+    <label class="field">Max lines of generated code <span class="hint">30–2000</span><input type="number" name="max_loc" min="30" max="2000" required></label>
+    <label class="field">Target environment<select name="target_environment"><option value="staging">staging</option><option value="production">production</option></select></label>
+    <label class="field">Delayed after (hours) <span class="hint">a task idle this long counts as delayed</span><input type="number" name="delay_threshold_hours" min="1" max="720" required></label>
+    <div class="full" id="pipeline-actions"><button type="submit" id="pipeline-save">Save pipeline</button></div>
+  </form>
+  <div class="notice" id="pipeline-note" hidden>Only a Project Manager can change the pipeline.</div>
+</section>
+
+<section class="card">
+  <h2>Tasks (FR-4)</h2>
+  <div id="task-table" class="table-wrap"></div>
+  <form id="task-form" class="form-grid" hidden>
+    <h3 class="full">Create a task from a requirement</h3>
+    <label class="field">Requirement<select name="req_id" id="task-req" required></select></label>
+    <label class="field">Title<input name="title" required minlength="3" maxlength="120" placeholder="e.g. Build login API"></label>
+    <label class="field full">Description <span class="hint">what the Code Generation Agent should build</span><textarea name="description" rows="2" maxlength="2000"></textarea></label>
+    <div class="full"><button type="submit">Create task</button></div>
+    <details class="full"><summary>Demo tip: trigger failure paths</summary>
+      <p class="muted">Add a marker to the title or description: <code>[fail-llm]</code> first generation fails · <code>[fail-llm-always]</code> always fails · <code>[fail-tests]</code> first test run fails · <code>[fail-tests-always]</code> · <code>[fail-deploy]</code> first deployment fails.</p>
+    </details>
+  </form>
+  <div class="notice" id="task-note" hidden>Only a Developer can create and assign tasks.</div>
+</section>
+{% endblock %}

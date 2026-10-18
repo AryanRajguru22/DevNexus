@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div><a id="back-link" href="/projects">← Project</a><h1 id="task-title">Task</h1><small id="task-sub"></small></div>
+  <div id="task-badges" class="row"></div>
+</div>
+<section class="card"><h2>Lifecycle</h2><ol class="stepper" id="stepper"></ol><div id="task-meta"></div></section>
+
+<section class="card">
+  <h2>Actions</h2>
+  <div class="row" id="actions"></div>
+  <form id="reject-form" class="form-grid" hidden>
+    <label class="field full">Reason for rejection (sent to the agent as rework feedback)<textarea name="comments" required rows="2" maxlength="2000"></textarea></label>
+    <div class="full row"><button type="submit" class="danger">Reject and send back for rework</button><button type="button" class="secondary" id="reject-cancel">Cancel</button></div>
+  </form>
+  <p class="muted" id="actions-note"></p>
+</section>
+
+<section class="card"><h2>Code review: diff against main (FR-7)</h2><div id="diff"></div></section>
+<div class="grid cols-2">
+  <section class="card"><h2>Agent runs</h2><div id="runs" class="table-wrap"></div></section>
+  <section class="card"><h2>Automated test results (FR-8) <span class="badge tag-sim">simulated</span></h2><div id="tests" class="table-wrap"></div></section>
+</div>
+<section class="card"><h2>Deployments (FR-9)</h2><div id="deployments" class="table-wrap"></div></section>
+<section class="card"><h2>History (audit trail, FR-14)</h2><div id="history" class="table-wrap"></div></section>
+{% endblock %}

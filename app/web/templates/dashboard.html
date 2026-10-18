@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Project dashboard</h1><small>Computed from the database on every refresh (every 5 s). Coverage is simulated; see the banner above.</small></div>
+  <label class="field inline">Project <select id="project-filter" aria-label="Project filter"></select></label>
+</div>
+<div id="dash-empty" class="notice" hidden>No projects yet. A Project Manager can <a href="/projects">create the first project</a>.</div>
+<div class="grid cols-4" id="kpis"></div>
+<div class="grid cols-2">
+  <section class="card"><h2>Task status (FR-6)</h2><div id="status-bars" class="bars"></div></section>
+  <section class="card"><h2>Velocity: tasks deployed per 2-week sprint</h2><div id="velocity" class="vel"></div><small class="muted">Oldest sprint on the left; the last bar is the current sprint.</small></section>
+</div>
+<section class="card"><h2>Risk indicators (FR-11)</h2><div id="risk"></div></section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head"><div><h1>Audit trail</h1><small>FR-14 / NFR-11: every agent action and human approval, append-only and enforced by the database.</small></div></div>
+<section class="card">
+  <form id="audit-form" class="row inline">
+    <label class="field">Action <input name="action" placeholder="e.g. task.approve"></label>
+    <label class="field">Target <input name="target_ref" placeholder="e.g. task:3"></label>
+    <button type="submit">Search</button><button type="reset" class="secondary" id="audit-reset">Clear</button>
+  </form>
+</section>
+<section class="card"><div id="audit-table" class="table-wrap"></div></section>
+{% endblock %}
