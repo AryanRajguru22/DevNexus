@@ -1,11 +1,33 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-head"><div><a href="/projects">← Projects</a><h1 id="project-title">Project</h1><small id="project-sub"></small></div></div>
-<section class="card"><h2>Problem, scope and objectives</h2><div id="project-info"></div></section>
+<section class="card">
+  <div class="row spread"><h2>Problem, scope and objectives</h2><button type="button" class="secondary" id="project-edit-open" hidden>Edit details</button></div>
+  <div id="project-info"></div>
+  <form id="project-edit-form" class="form-grid" hidden>
+    <h3 class="full">Edit project details</h3>
+    <label class="field full">Name<input name="name" required maxlength="120"></label>
+    <label class="field full">Problem statement<textarea name="problem_statement" required rows="2" maxlength="2000"></textarea></label>
+    <label class="field">Scope<textarea name="scope" required rows="2" maxlength="2000"></textarea></label>
+    <label class="field">Objectives<textarea name="objectives" required rows="2" maxlength="2000"></textarea></label>
+    <label class="field">Start date <span class="hint">(optional)</span><input type="date" name="start_date"></label>
+    <label class="field">End date <span class="hint">(optional)</span><input type="date" name="end_date"></label>
+    <label class="field">Status<select name="status"><option>Planning</option><option>Active</option><option>Completed</option></select></label>
+    <div class="full row"><button type="submit">Save changes</button><button type="button" class="secondary" id="project-edit-cancel">Cancel</button></div>
+  </form>
+</section>
 
 <section class="card">
   <h2>Requirements (FR-2)</h2>
   <div id="req-table" class="table-wrap"></div>
+  <form id="req-edit-form" class="form-grid" hidden>
+    <h3 class="full" id="req-edit-title">Edit requirement</h3>
+    <label class="field full">Description<textarea name="description" required minlength="5" maxlength="2000" rows="2"></textarea></label>
+    <label class="field">Type<select name="type"><option value="functional">functional</option><option value="non-functional">non-functional</option></select></label>
+    <label class="field">Priority<select name="priority"><option>High</option><option>Medium</option><option>Low</option></select></label>
+    <p class="full muted">Only Draft requirements can be edited. Approving a requirement locks it.</p>
+    <div class="full row"><button type="submit">Save requirement</button><button type="button" class="secondary" id="req-edit-cancel">Cancel</button></div>
+  </form>
   <form id="req-form" class="form-grid" hidden>
     <h3 class="full">Add a requirement</h3>
     <label class="field full">Description<textarea name="description" required minlength="5" maxlength="2000" rows="2" placeholder="The system shall…"></textarea></label>
