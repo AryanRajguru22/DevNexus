@@ -1,13 +1,13 @@
 """Task helpers shared by the routers and the orchestrator: guarded transitions, DTO building."""
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from .. import audit, notifications, workflow
 from ..adapters.llm import slugify
 from ..enums import STATUS_GROUP, NotificationKind, TaskStatus
-from ..errors import ApiError
+from ..errors import ApiError, invalid_transition
 from ..models import Agent, AuditLog, Task
 from ..schemas import AuditEntryOut, TaskOut
 from . import analytics
@@ -40,11 +40,44 @@ def flag_retry_limit(db: Session, task: Task, actor: workflow.Actor, err: ApiErr
     analytics.check_risk_threshold(db, task.project)
 
 
+def claim(db: Session, task: Task, expected_status: str) -> bool:
+    """Atomically take the write lock on the task row if it is still in `expected_status` (compare-and-set).
+
+    The in-memory `task` may be stale: another request or job can have moved it since it was loaded, and a plain
+    `task.status = ...` would silently overwrite that. This no-op UPDATE matches only while the stored status is
+    still `expected_status`; on a match the row stays locked until the caller's commit, so the check and the
+    change that follows are one atomic step. It is what makes a duplicate request or job lose cleanly (False).
+    """
+    result = db.execute(
+        update(Task).where(Task.task_id == task.task_id, Task.status == expected_status).values(status=expected_status),
+        execution_options={"synchronize_session": False},
+    )
+    return result.rowcount == 1
+
+
+def claim_or_conflict(db: Session, task: Task, event: str) -> None:
+    """Claim the task in the source state of `event`; raise 409 invalid_transition if it moved in the meantime."""
+    transition = workflow.TRANSITIONS.get(event)
+    if transition is None or task.status != transition.src.value:
+        return  # unknown event or already visibly wrong: workflow.check_event reports the precise problem
+    if not claim(db, task, transition.src.value):
+        db.refresh(task)
+        raise invalid_transition(
+            f"Task is now '{task.status}'; it was changed by another request while '{event}' was being processed",
+            current=task.status, required=transition.src.value, event=event,
+        )
+
+
 def fire(
     db: Session, task: Task, event: str, actor: workflow.Actor, *, detail: str | None = None, audit_entry: bool = True
 ) -> Task:
-    """workflow.apply_event plus the retry-limit side effects, which must survive the refusal."""
+    """workflow.apply_event plus the retry-limit side effects, which must survive the refusal.
+
+    The task is claimed first (compare-and-set), so two concurrent requests or jobs cannot both apply the same
+    transition: the loser gets 409 invalid_transition and changes nothing.
+    """
     try:
+        claim_or_conflict(db, task, event)
         return workflow.apply_event(db, task, event, actor, detail=detail, audit_entry=audit_entry)
     except ApiError as err:
         if err.code == "retry_limit_exceeded":

@@ -1,7 +1,7 @@
 # Requirements Traceability Matrix
 
 Identifiers and wording are from the Lab Record (Lab 2) and Phase 3 §14.8. Status vocabulary: **implemented**, **partially implemented**, **planned**, **blocked**, **deferred**.
-Evidence = automated tests in `tests/` (run `pytest`). Last verified: 2026-10-17 — **248 passed**, app coverage 98%.
+Evidence = automated tests in `tests/` (run `pytest`). Last verified: 2026-10-20 — **275 passed**, app coverage 98% (working tree with PLAN-13/PLAN-14 applied, not yet committed; baseline 2026-10-17 was 248). Rohit's (PLAN-05/06/07/16) and Vinayak's (PLAN-08–12) work was not available on GitHub or locally on 2026-10-20, so rows depending on it are unchanged.
 Owner of this file: Member B (update the *Status* and *Evidence* columns whenever a PR changes them).
 
 ## Functional requirements
@@ -31,10 +31,10 @@ Owner of this file: Member B (update the *Status* and *Evidence* columns wheneve
 | NFR-2 | Dashboard refresh ≤ 5 s | computed live per request; UI polls every 5 s | `test_analytics.py::test_dashboard_is_fast_with_50_tasks` | implemented |
 | NFR-3 | Role-based authorisation before code/infra-changing actions | `security.require_roles` + `workflow` actor rules; denials audited | `test_api_projects.py`, `test_workflow.py` (wrong actor ×9), `test_task_flows.py` | partially implemented — roles enforced, authentication is a demo switcher (D-6) |
 | NFR-4 | TLS 1.2+ | — | — | deferred (D-3) |
-| NFR-5 | 99.5% uptime, queue during downtime | data persists in SQLite; no durable queue | `test_nfr.py::test_nfr5…` (restart keeps data) | partially implemented (proposed PLAN-13 adds startup recovery) |
+| NFR-5 | 99.5% uptime, queue during downtime | data persists in SQLite; start-up recovery re-runs interrupted jobs (PLAN-13); no durable queue, no uptime measured | `test_nfr.py::test_nfr5…`, `test_recovery.py` (13 tests), manual kill-and-restart of a real server 2026-10-20 | partially implemented |
 | NFR-6 | Failed task cannot corrupt repo; agent commits on isolated branches | `LocalGitAdapter` refuses `main`/`master`, path traversal; merge snapshot + rollback | `test_adapters_and_agents.py` | implemented |
 | NFR-7 | First-time PM creates project + sees dashboard < 10 min unaided | guided forms, empty states, role notes | not yet timed with a first-time user (proposed PLAN-19) | partially implemented |
-| NFR-8 | ≥ 50 concurrent agent tasks per project | background jobs; 50 tasks created and assigned | `test_nfr.py::test_nfr8…` (sequential smoke, not true concurrency) | partially implemented |
+| NFR-8 | ≥ 50 concurrent agent tasks per project | background jobs; 50 tasks created and assigned; duplicate-job guard (PLAN-14) | `test_nfr.py::test_nfr8…` (sequential smoke); `test_orchestrator_guard.py` (14 tests, threads on one task — not 50 parallel tasks) | partially implemented |
 | NFR-9 | Agents independently deployable/upgradable | each agent is a module behind an interface | structural only | partially implemented (D-2) |
 | NFR-10 | Any cloud; GitHub and GitLab integration | adapter interfaces; pure Python, runs on Windows/macOS/Linux | — | partially implemented — no real GitHub/GitLab adapter |
 | NFR-11 | Every human approval/rejection/override logged with timestamp + user ID | `audit_log` rows with `user_id`, `timestamp`; DB triggers | `test_audit.py`, `test_task_flows.py` (approve/reject/deploy rows) | implemented |

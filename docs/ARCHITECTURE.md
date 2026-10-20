@@ -44,7 +44,7 @@ Principles carried over from the design: low coupling (routers → services → 
 | ID | Documented | Implemented | Why | Impact |
 |---|---|---|---|---|
 | D-1 | PostgreSQL | SQLite file (`data/devnexus.db`) | zero setup/cost; SQLAlchemy keeps the code portable | none on features; NFR-8 headroom lower |
-| D-2 | Separate services, gRPC, message queue, containers | One FastAPI process; services are modules; "queue" = FastAPI background tasks | 1–2 weeks, one laptop | NFR-5/8/9 partial; background jobs are lost if the process dies mid-run |
+| D-2 | Separate services, gRPC, message queue, containers | One FastAPI process; services are modules; "queue" = FastAPI background tasks | 1–2 weeks, one laptop | NFR-5/8/9 partial; a job lost when the process dies is re-run at the next start (PLAN-13), but there is no durable queue |
 | D-3 | TLS 1.2+ on every external link | Plain HTTP on 127.0.0.1 | local demo; TLS belongs to the reverse proxy in a real deployment | NFR-4 deferred |
 | D-4 | Real LLM, GitHub/GitLab, CI/CD runner | Deterministic **mock** LLM, local directory "Git host", mock CI/CD; all behind interfaces | no paid services; no network dependency in a viva | FR-5/8/9 partial; clearly labelled in UI banner, code and tests |
 | D-5 | Testing Agent "generates and executes" tests | Generated code is only **parsed** (AST) and statically checked; generated tests are committed but never run | never execute arbitrary generated code on the host | results/coverage flagged `simulated` |
@@ -64,7 +64,7 @@ Principles carried over from the design: low coupling (routers → services → 
 
 ## 5. Runtime & configuration
 
-`python -m app` → http://127.0.0.1:8000 (API docs at `/docs`). Environment variables: `DEVNEXUS_DATA_DIR` (default `./data`), `DEVNEXUS_DATABASE_URL`, `DEVNEXUS_MOCK_AGENT_DELAY` (seconds; makes *Generating/Testing* visible in a demo), `DEVNEXUS_SEED_DEMO_USERS` (default 1), `DEVNEXUS_HOST`, `DEVNEXUS_PORT`. Nothing sensitive is stored; no secrets exist in the MVP.
+`python -m app` → http://127.0.0.1:8000 (API docs at `/docs`). Environment variables: `DEVNEXUS_DATA_DIR` (default `./data`), `DEVNEXUS_DATABASE_URL`, `DEVNEXUS_MOCK_AGENT_DELAY` (seconds; makes *Generating/Testing* visible in a demo), `DEVNEXUS_SEED_DEMO_USERS` (default 1), `DEVNEXUS_LLM_PROVIDER` (default `mock`), `DEVNEXUS_RECOVER_ON_STARTUP` (default 1), `DEVNEXUS_HOST`, `DEVNEXUS_PORT`. Nothing sensitive is stored; no secrets exist in the MVP.
 
 ## 6. Risk mapping (Phase 2 R1–R10)
 

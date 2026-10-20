@@ -172,6 +172,12 @@ Either actor: `task.retry_limit_exceeded` (a refused rework, written by whoever 
 | `CICDAdapter.deploy(branch, environment)` | `MockCICDAdapter` | returns `succeeded`/`failed`; failure triggers rollback |
 | Testing agent test runner | AST/static checks only | **never executes generated code**; results flagged `simulated` |
 
+**Configuration added by PLAN-13/14:** `DEVNEXUS_LLM_PROVIDER` (default `mock`; registry `adapters/llm.PROVIDERS`; unknown name raises `UnknownProviderError` before the database is touched) and `DEVNEXUS_RECOVER_ON_STARTUP` (default on).
+
+**Start-up recovery (PLAN-13)** — `orchestrator.recover_interrupted(rt)` then `run_recovered_jobs`, called from `build_runtime`. It adds no state, status value, endpoint or audit action: an orphaned `running` run becomes `failed` (`error_message` "Interrupted: …") with an `agent.error` audit row written by the code-generation agent; Assigned/Generating tasks are re-dispatched (rework feedback restored from the audit trail) while `workflow.rework_allowed`, otherwise Generating → Failed via the normal `agent_error` event; Testing tasks are re-dispatched only when the newest completed run has no test result and the last audit row is not an `agent.error`. An interrupted run counts toward the retry limit and toward the repeated-failures risk. Assumes one process per database.
+
+**Duplicate-job guard (PLAN-14)** — `services.tasks.claim` is a compare-and-set on `task.status` used by `fire()` and by deployment; a loser gets `409 invalid_transition` ("changed by another request"). A generation job also refuses to start while a run of the task is `running`. No new error code.
+
 Failure injection (demo/tests): put a marker in the task title or description — `[fail-llm]` (first generation attempt fails), `[fail-llm-always]`, `[fail-tests]` (first test run fails), `[fail-tests-always]`, `[fail-deploy]` (first deployment fails).
 
 ## 8. Notification rules (FR-13)

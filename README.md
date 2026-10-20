@@ -17,7 +17,7 @@ cd DevNexus
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-pytest                      # 248 tests
+pytest                      # 275 tests
 python -m app               # http://127.0.0.1:8000
 ```
 
@@ -41,12 +41,12 @@ python scripts/demo_seed.py
 To see the *Generating/Testing* states during a demo, slow the mock agents: set `DEVNEXUS_MOCK_AGENT_DELAY=1.5` before `python -m app`.
 
 ### Configuration (environment variables, all optional)
-`DEVNEXUS_DATA_DIR` (default `./data`: SQLite file + mock Git workspace) · `DEVNEXUS_DATABASE_URL` · `DEVNEXUS_MOCK_AGENT_DELAY` · `DEVNEXUS_SEED_DEMO_USERS` (default `1`) · `DEVNEXUS_HOST` · `DEVNEXUS_PORT`. No secrets are needed or stored. To reset everything, stop the server and delete `data/`.
+`DEVNEXUS_DATA_DIR` (default `./data`: SQLite file + mock Git workspace) · `DEVNEXUS_DATABASE_URL` · `DEVNEXUS_MOCK_AGENT_DELAY` · `DEVNEXUS_SEED_DEMO_USERS` (default `1`) · `DEVNEXUS_LLM_PROVIDER` (default and only built-in value: `mock`; an unknown name stops start-up) · `DEVNEXUS_RECOVER_ON_STARTUP` (default `1`; `0` disables re-running jobs interrupted by a restart) · `DEVNEXUS_HOST` · `DEVNEXUS_PORT`. No secrets are needed or stored. To reset everything, stop the server and delete `data/`.
 
 ### Verified on
 | OS | Python | Result |
 |---|---|---|
-| Windows 11 | 3.11.9 | 248 passed (2026-10-17) |
+| Windows 11 | 3.11.9 | 275 passed in a clean venv from `requirements.txt` (2026-10-20, uncommitted working tree; 248 on the 2026-10-17 baseline) |
 | macOS | — | not yet verified (proposed task PLAN-20) |
 | Linux | — | not yet verified (proposed task PLAN-20) |
 

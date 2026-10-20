@@ -5,6 +5,7 @@ LABEL: MockLLMProvider returns templated code. It is NOT a real language model; 
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -35,6 +36,10 @@ class LLMProvider(Protocol):
     name: str
 
     def generate(self, request: CodeRequest) -> GeneratedCode: ...
+
+
+class UnknownProviderError(ValueError):
+    """DEVNEXUS_LLM_PROVIDER names a provider that is not registered."""
 
 
 def slugify(text: str) -> str:
@@ -91,3 +96,17 @@ class MockLLMProvider:
             files={f"generated/{slug}.py": "\n".join(lines)},
             summary=f"Generated generated/{slug}.py ({len(lines)} lines) from the task description",
         )
+
+
+# Extension point: a real provider is added by registering a zero-argument factory here (it must read its own
+# credentials from the environment). Only the mock is built in; no paid service is needed to run or test DevNexus.
+PROVIDERS: dict[str, Callable[[], LLMProvider]] = {"mock": MockLLMProvider}
+
+
+def create_provider(name: str) -> LLMProvider:
+    try:
+        return PROVIDERS[name]()
+    except KeyError:
+        raise UnknownProviderError(
+            f"Unknown LLM provider '{name}'. Set DEVNEXUS_LLM_PROVIDER to one of: {', '.join(sorted(PROVIDERS))}"
+        ) from None

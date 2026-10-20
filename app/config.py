@@ -14,6 +14,10 @@ class Settings:
     # visible during a live demo. 0 in tests.
     mock_agent_delay: float = 0.0
     seed_demo_users: bool = True
+    # Name of the LLM provider (see adapters/llm.PROVIDERS). "mock" is the only built-in one.
+    llm_provider: str = "mock"
+    # Re-dispatch agent jobs interrupted by a restart when the application starts (NFR-5, services/orchestrator).
+    recover_on_startup: bool = True
 
 
 def get_settings() -> Settings:
@@ -24,4 +28,6 @@ def get_settings() -> Settings:
         database_url=os.environ.get("DEVNEXUS_DATABASE_URL", default_url),
         mock_agent_delay=float(os.environ.get("DEVNEXUS_MOCK_AGENT_DELAY", "0")),
         seed_demo_users=os.environ.get("DEVNEXUS_SEED_DEMO_USERS", "1") != "0",
+        llm_provider=os.environ.get("DEVNEXUS_LLM_PROVIDER", "mock").strip().lower(),
+        recover_on_startup=os.environ.get("DEVNEXUS_RECOVER_ON_STARTUP", "1") != "0",
     )

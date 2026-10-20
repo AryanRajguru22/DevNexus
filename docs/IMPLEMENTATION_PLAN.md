@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Deadline: Fri 23 Oct 2026.** The baseline already runs end to end (248 passing tests), so the remaining six days are parallel hardening, UI completion, evidence and rehearsal.
+**Deadline: Fri 23 Oct 2026.** The baseline already runs end to end (248 passing tests at commit `37ab6aa`; 275 with PLAN-13/14 applied locally, 2026-10-20), so the remaining six days are parallel hardening, UI completion, evidence and rehearsal.
 
 The authoritative day-by-day schedule, task list, owners, dependencies, acceptance criteria and file ownership are in:
 - `TEAM_WORK_DIVISION.md` (schedule, interfaces, per-person task tables)

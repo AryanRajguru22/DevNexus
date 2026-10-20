@@ -13,12 +13,13 @@ Run everything: `pytest` (venv active). With coverage: `pytest --cov=app --cov-r
 | Non-functional | NFR-1/2/5/8 measurable parts | `test_nfr.py`, `test_analytics.py` |
 | Manual / browser | Full lifecycle clicked through the real UI | DEMO_SCRIPT.md; run on 2026-10-17 (see §3) |
 
-## 2. Latest automated results (real, 2026-10-17, Windows 11, Python 3.11.9)
+## 2. Latest automated results (real, 2026-10-20, Windows 11, Python 3.11.9)
 
 ```
-248 passed        (pytest, ~50 s)
-TOTAL coverage    98% of app/  (orchestrator 81%, others 97–100%)
+275 passed        (pytest, ~50 s; also 275 passed in a clean venv built from requirements.txt)
+TOTAL coverage    98% of app/  (orchestrator 91%, others 97–100%)
 ```
+Working tree with PLAN-13/PLAN-14 applied (uncommitted). Baseline commit `37ab6aa` (2026-10-17): 248 passed, orchestrator 81%. The new tests were mutation-checked: disabling the compare-and-set, the running-run check, the Testing-discriminator or the retry-limit check each makes the intended tests fail.
 
 | File | Tests |
 |---|---|
@@ -30,6 +31,8 @@ TOTAL coverage    98% of app/  (orchestrator 81%, others 97–100%)
 | test_ui_pages.py | 15 |
 | test_audit.py | 9 |
 | test_nfr.py | 3 |
+| test_recovery.py | 13 (start-up recovery: interrupted/assigned/testing jobs, feedback restore, retry-limit bound, idempotency, left-alone cases) |
+| test_orchestrator_guard.py | 14 (duplicate generation/test/deploy/approve requests with real threads, stale-session lost update, provider selection) |
 
 Bugs found by testing during construction (all fixed, regression tests added): timestamps serialised as `…+00:00Z` (UI showed "Invalid Date"); `[hidden]` overridden by CSS `display:grid`; `ev.currentTarget` null after `await` in form handlers (found by driving the real UI in a browser).
 
@@ -62,7 +65,8 @@ See REQUIREMENTS_TRACEABILITY.md (Verification column). Member B keeps the *Evid
 |---|---|---|
 | NFR-1 | assign → In Review time with mock provider | < 1 s (real LLM not measured) |
 | NFR-2 | dashboard request with 50 tasks | < 5 s asserted; typically tens of ms |
-| NFR-5 | restart keeps tasks, history, users | passes |
+| NFR-5 | restart keeps tasks, history, users; interrupted jobs are re-run | passes; real server killed mid-generation (`taskkill /F`) → on restart the run is closed as failed, a new run completes, task reaches In Review; a second restart changes nothing (2026-10-20) |
+| End-to-end (HTTP) | 69 checks against a real server: project/requirement/pipeline → task → assign → diff → reject/rework → approve → tests → deploy; role refusals; invalid transitions; `[fail-tests]`, `[fail-llm]`, `[fail-llm-always]` retry limit, `[fail-deploy]`; dashboard/estimation on empty and populated projects; hard restart persistence | 69/69 passed (2026-10-20). Script not committed. Browser (visual) pass **not done** on 2026-10-20: the Chrome extension was not connected |
 | NFR-6 | commit to main/master, `..` paths, bad branch names refused; failed deploy restores main | passes |
 | NFR-7 | first-time PM < 10 min | **not yet measured** (PLAN-19) |
 | NFR-8 | 50 tasks created + assigned in one project | passes (sequential) |
