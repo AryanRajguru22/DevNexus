@@ -4,6 +4,12 @@
   <div><h1>Project dashboard</h1><small>Computed from the database on every refresh (every 5 s). Coverage is simulated; see the banner above.</small></div>
   <label class="field inline">Project <select id="project-filter" aria-label="Project filter"></select></label>
 </div>
+<section class="card" id="getting-started" hidden aria-labelledby="gs-title">
+  <div class="row spread"><h2 id="gs-title">Getting started</h2><button type="button" class="secondary small" id="gs-hide">Hide</button></div>
+  <small class="muted" id="gs-count"></small>
+  <div class="progress-line" aria-hidden="true"><span id="gs-bar"></span></div>
+  <ol class="checklist" id="gs-steps"></ol>
+</section>
 <div id="dash-empty" class="notice" hidden>No projects yet. A Project Manager can <a href="/projects">create the first project</a>.</div>
 <div class="grid cols-4" id="kpis"></div>
 <div class="grid cols-2">

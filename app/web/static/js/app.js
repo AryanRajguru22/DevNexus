@@ -92,13 +92,19 @@
     const stored = Number(localStorage.getItem(USER_KEY));
     state.me = state.users.find((u) => u.user_id === stored) || state.users[0] || null;
     const select = $('#user-select');
-    put(select, state.users.map((u) => h('option', { value: u.user_id, selected: state.me && u.user_id === state.me.user_id }, `${u.name} · ${u.role.replace('_', ' ')}`)));
+    put(select, state.users.map((u) => h('option', { value: u.user_id, selected: state.me && u.user_id === state.me.user_id }, userLabel(u))));
     select.addEventListener('change', () => {
       localStorage.setItem(USER_KEY, select.value);
       location.reload();
     });
     refreshBell();
     setInterval(refreshBell, 10000);
+  }
+
+  // Demo user names already carry the role, e.g. "Aryan (Project Manager)"; only append it when they don't.
+  function userLabel(u) {
+    const role = u.role.replace('_', ' ');
+    return u.name.toLowerCase().replace(/[()]/g, '').includes(role) ? u.name : `${u.name} · ${role}`;
   }
 
   async function refreshBell() {
@@ -142,9 +148,47 @@
         h('div', { title: `${v.sprint_start} → ${v.sprint_end}` }, h('strong', {}, v.deployed), h('span', { style: `height:${(100 * v.deployed) / vmax}%` }), v.sprint_start.slice(5))));
       put($('#risk'), riskView(d.risk));
     }
+    // PLAN-10 / NFR-7: getting-started checklist. Every tick comes from API data (never from local state); the
+    // card disappears once all steps are done, or when the user hides it (a per-browser convenience only).
+    const GS_KEY = 'devnexus.getting-started.hidden';
+    const gsHidden = () => { try { return localStorage.getItem(GS_KEY) === '1'; } catch (_) { return false; } };
+    $('#gs-hide').addEventListener('click', () => {
+      try { localStorage.setItem(GS_KEY, '1'); } catch (_) { /* storage blocked: hide for this view only */ }
+      $('#getting-started').hidden = true;
+    });
+    // Every step is monotonic (audit rows are append-only, deployments and tasks are never removed), so once all
+    // steps are done the checklist stops polling.
+    let gsComplete = false;
+    async function loadChecklist() {
+      if (gsComplete || gsHidden()) return;
+      const [projects, all, approvals, riskReports] = await Promise.all([
+        api('/api/projects'), api('/api/dashboard'), api('/api/audit', { query: { action: 'task.approve', limit: 1 } }),
+        api('/api/audit', { query: { action: 'risk_report.generate', limit: 1 } })]);
+      const s = all.totals.by_status;
+      const first = projects[0];
+      const projectLink = first ? `/projects/${first.project_id}` : '/projects';
+      const steps = [
+        ['Create a project', 'Project Manager', projects.length > 0, '/projects'],
+        ['Add a requirement', 'Project Manager', projects.some((p) => p.requirement_count > 0), projectLink],
+        ['Create a task from a requirement', 'Developer', all.totals.tasks > 0, projectLink],
+        ['Assign a task to the Code Generation Agent', 'Developer', all.totals.tasks - s.Created > 0, projectLink],
+        ['Review and approve the generated code', 'Developer', approvals.length > 0, projectLink],
+        ['Authorise a deployment', 'Developer or Project Manager', s.Deployed > 0, projectLink],
+        ['Generate a risk report', 'Project Manager', riskReports.length > 0, '/reports'],
+      ];
+      const done = steps.filter((st) => st[2]).length;
+      gsComplete = done === steps.length;
+      $('#getting-started').hidden = gsComplete;
+      $('#gs-count').textContent = `${done} of ${steps.length} steps done. Switch the acting user at the top to play each role.`;
+      $('#gs-bar').style.width = `${(100 * done) / steps.length}%`;
+      put($('#gs-steps'), steps.map(([label, who, ok, href]) => h('li', { class: ok ? 'done' : '' },
+        h('span', { class: 'tick', 'aria-hidden': 'true' }, ok ? '✓' : ''),
+        h('div', {}, h('span', { class: 'step' }, ok ? label : h('a', { href }, label)), ' ',
+          h('span', { class: 'who' }, `(${who})`), h('span', { class: 'sr-only' }, ok ? ' — done' : ' — to do')))));
+    }
     const kpi = (label, value, sub) => h('div', { class: 'card kpi' }, h('div', { class: 'label' }, label), h('div', { class: 'value' }, value), h('small', {}, sub));
-    await load();
-    setInterval(() => load().catch(() => {}), 5000);
+    await Promise.all([load(), loadChecklist()]);
+    setInterval(() => { load().catch(() => {}); loadChecklist().catch(() => {}); }, 5000);
   }
 
   function riskView(risk) {
@@ -332,7 +376,8 @@
       $('#task-title').textContent = t.title;
       $('#task-sub').textContent = `Task #${t.task_id} · created ${when(t.created_at)}`;
       $('#back-link').href = `/projects/${t.project_id}`;
-      put($('#task-badges'), badge(t.status), h('span', { class: 'badge' }, t.status_group.replace('_', ' ')));
+      const group = t.status_group.replace('_', ' ');
+      put($('#task-badges'), badge(t.status), group !== t.status.toLowerCase() ? h('span', { class: 'badge group', title: 'Status group (FR-6)' }, group) : null);
       renderStepper(t.status);
       put($('#task-meta'), h('p', {}, t.description || h('span', { class: 'muted' }, 'No description.')),
         h('p', { class: 'muted' }, `Rework budget: ${Math.max(0, t.run_count - 1)} of ${t.retry_limit} rework/retry attempt(s) used` + (t.rework_allowed ? '.' : ' - the retry limit is reached, so this task is reported as a risk.')));
@@ -397,8 +442,14 @@
         Testing: 'The Testing Agent is running the automated tests.',
         'Ready for Deployment': 'All tests passed. A Developer or Project Manager can authorise deployment.',
         Deployed: 'This task is complete: the build was deployed.',
-        Failed: 'An agent error occurred and no further retries are possible (retry limit) or you are not a Developer.',
       };
+      if (t.status === 'Failed') {
+        map.Failed = !t.rework_allowed
+          ? 'An agent error occurred and the retry limit is reached, so this task cannot be retried; it is reported as a risk.'
+          : isDev()
+            ? 'An agent error occurred. Retrying needs the Code Generation agent to be active in the project pipeline.'
+            : 'An agent error occurred. Only a Developer can retry this task.';
+      }
       return `${map[t.status] || ''} (You are acting as: ${role}.)`;
     }
 

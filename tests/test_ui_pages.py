@@ -60,3 +60,22 @@ def test_every_element_id_used_by_js_exists_in_a_template():
 def test_js_never_uses_innerhtml():
     js = (WEB / "static/js/app.js").read_text(encoding="utf-8")
     assert "innerHTML" not in js and "insertAdjacentHTML" not in js and "document.write" not in js
+
+
+def test_css_colours_come_from_design_tokens():
+    """PLAN-10: hex colours are defined once in :root; components use var(--...) only."""
+    css = (WEB / "static/css/app.css").read_text(encoding="utf-8")
+    root_end = css.index("}", css.index(":root"))
+    stray = re.findall(r"#[0-9a-fA-F]{3,8}\b", css[root_end:])
+    assert stray == [], f"hard-coded colours outside :root: {stray}"
+
+
+def test_grid_columns_can_shrink_below_content_width():
+    """PLAN-04 defect 2: `1fr` columns grow to fit wide tables and cause sideways scrolling; use minmax(0, 1fr)."""
+    css = (WEB / "static/css/app.css").read_text(encoding="utf-8")
+    assert not re.search(r"repeat\(\d, 1fr\)", css)
+
+
+def test_dashboard_has_getting_started_checklist(client):
+    html = client.get("/").text
+    assert 'id="getting-started"' in html and 'id="gs-steps"' in html and 'id="gs-hide"' in html
