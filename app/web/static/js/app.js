@@ -181,6 +181,8 @@
   // ---------- one project: requirements, pipeline, tasks (FR-2, FR-3, FR-4) ----------
   async function pageProject() {
     const pid = Number(document.body.dataset.projectId);
+    let current = null;
+    let editingReq = null;
     async function load() {
       const [p, reqs, tasks] = await Promise.all([
         api(`/api/projects/${pid}`), api(`/api/projects/${pid}/requirements`), api('/api/tasks', { query: { project_id: pid } })]);
@@ -188,9 +190,13 @@
       $('#project-sub').textContent = `${p.status} · ${p.requirement_count} requirement(s) · ${p.task_count} task(s)`;
       put($('#project-info'), h('dl', {}, [['Problem statement', p.problem_statement], ['Scope', p.scope], ['Objectives', p.objectives]]
         .flatMap(([k, v]) => [h('dt', {}, h('strong', {}, k)), h('dd', { style: 'margin:0 0 .6rem' }, v)])));
+      current = p;
+      $('#project-edit-open').hidden = !isPM() || !$('#project-edit-form').hidden;
       put($('#req-table'), reqs.length ? h('table', {},
-        h('thead', {}, h('tr', {}, ['#', 'Description', 'Type', 'Priority', 'Status'].map((c) => h('th', {}, c)))),
-        h('tbody', {}, reqs.map((r) => h('tr', {}, h('td', {}, r.req_id), h('td', {}, r.description), h('td', {}, r.type), h('td', {}, r.priority), h('td', {}, r.status))))) : empty('No requirements yet.'));
+        h('thead', {}, h('tr', {}, ['#', 'Description', 'Type', 'Priority', 'Status', isPM() ? '' : null].filter((c) => c != null).map((c) => h('th', {}, c)))),
+        h('tbody', {}, reqs.map((r) => h('tr', {}, h('td', {}, r.req_id), h('td', {}, r.description), h('td', {}, r.type), h('td', {}, r.priority),
+          h('td', {}, h('span', { class: `badge req-${r.status}` }, r.status === 'Approved' ? 'Approved · locked' : r.status)),
+          isPM() ? h('td', { class: 'row-actions' }, reqActions(r)) : null)))) : empty('No requirements yet.'));
       $('#req-form').hidden = !isPM();
       fillPipeline(p.pipeline_config);
       put($('#task-req'), reqs.map((r) => h('option', { value: r.req_id }, `#${r.req_id} ${r.description.slice(0, 60)}`)));
@@ -202,6 +208,71 @@
         h('tbody', {}, tasks.map((t) => h('tr', {}, h('td', {}, t.task_id), h('td', {}, h('a', { href: `/tasks/${t.task_id}` }, t.title)), h('td', {}, badge(t.status)),
           h('td', {}, t.status_group.replace('_', ' ')), h('td', {}, t.run_count), h('td', {}, when(t.status_changed_at)))))) : empty('No tasks yet.'));
     }
+    // PLAN-09: edit / approve requirements and edit project details (PATCH endpoints, contract C-3). PM only.
+    function reqActions(r) {
+      if (r.status !== 'Draft') return h('span', { class: 'muted' }, '—');
+      return [
+        h('button', { type: 'button', class: 'secondary small', onclick: () => openReqEdit(r) }, 'Edit'),
+        h('button', { type: 'button', class: 'small', onclick: (ev) => {
+          if (!confirm(`Approve requirement #${r.req_id}? Approved requirements are locked and cannot be edited.`)) return;
+          act(ev.currentTarget, async () => {
+            await api(`/api/requirements/${r.req_id}`, { method: 'PATCH', body: { status: 'Approved' } });
+            toast(`Requirement #${r.req_id} approved`);
+            await load();
+          });
+        } }, 'Approve'),
+      ];
+    }
+    function openReqEdit(r) {
+      const f = $('#req-edit-form');
+      editingReq = r.req_id;
+      $('#req-edit-title').textContent = `Edit requirement #${r.req_id}`;
+      f.description.value = r.description;
+      f.type.value = r.type;
+      f.priority.value = r.priority;
+      f.hidden = false;
+      f.description.focus();
+    }
+    function openProjectEdit() {
+      const f = $('#project-edit-form');
+      for (const k of ['name', 'problem_statement', 'scope', 'objectives', 'status']) f[k].value = current[k];
+      f.start_date.value = current.start_date || '';
+      f.end_date.value = current.end_date || '';
+      f.hidden = false;
+      $('#project-edit-open').hidden = true;
+      f.name.focus();
+    }
+    function closeProjectEdit() {
+      $('#project-edit-form').hidden = true;
+      $('#project-edit-open').hidden = !isPM();
+    }
+    $('#project-edit-open').addEventListener('click', openProjectEdit);
+    $('#project-edit-cancel').addEventListener('click', closeProjectEdit);
+    $('#project-edit-form').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const f = ev.currentTarget;
+      act(ev.submitter, async () => {
+        const body = {};
+        for (const k of ['name', 'problem_statement', 'scope', 'objectives', 'status']) body[k] = f[k].value;
+        body.start_date = f.start_date.value || null; // an emptied date field clears the date
+        body.end_date = f.end_date.value || null;
+        await api(`/api/projects/${pid}`, { method: 'PATCH', body });
+        closeProjectEdit();
+        toast('Project details saved');
+        await load();
+      });
+    });
+    $('#req-edit-cancel').addEventListener('click', () => ($('#req-edit-form').hidden = true));
+    $('#req-edit-form').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const f = ev.currentTarget;
+      act(ev.submitter, async () => {
+        await api(`/api/requirements/${editingReq}`, { method: 'PATCH', body: { description: f.description.value, type: f.type.value, priority: f.priority.value } });
+        f.hidden = true;
+        toast(`Requirement #${editingReq} saved`);
+        await load();
+      });
+    });
     function fillPipeline(cfg) {
       const f = $('#pipeline-form');
       f.querySelectorAll('input[name=agent]').forEach((c) => (c.checked = cfg.active_agents.includes(c.value)));
