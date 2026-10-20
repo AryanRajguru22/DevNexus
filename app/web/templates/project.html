@@ -58,7 +58,13 @@
 </section>
 
 <section class="card">
-  <h2>Tasks (FR-4)</h2>
+  <div class="row spread"><h2>Tasks (FR-4)</h2>
+    <div class="segmented" role="group" aria-label="Task view">
+      <button type="button" class="secondary small" id="view-table" aria-pressed="true">Table</button>
+      <button type="button" class="secondary small" id="view-board" aria-pressed="false">Board</button>
+    </div>
+  </div>
+  <div id="task-board" class="board" hidden></div>
   <div id="task-table" class="table-wrap"></div>
   <form id="task-form" class="form-grid" hidden>
     <h3 class="full">Create a task from a requirement</h3>
