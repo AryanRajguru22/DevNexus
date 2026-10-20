@@ -251,7 +251,34 @@
         h('thead', {}, h('tr', {}, ['#', 'Title', 'Status', 'Group', 'Runs', 'Last change'].map((c) => h('th', {}, c)))),
         h('tbody', {}, tasks.map((t) => h('tr', {}, h('td', {}, t.task_id), h('td', {}, h('a', { href: `/tasks/${t.task_id}` }, t.title)), h('td', {}, badge(t.status)),
           h('td', {}, t.status_group.replace('_', ' ')), h('td', {}, t.run_count), h('td', {}, when(t.status_changed_at)))))) : empty('No tasks yet.'));
+      renderBoard(tasks);
     }
+    // PLAN-11: board view of the same task list, one column per FR-6 status group. Counts come from the same
+    // array as the table, so the two views always agree.
+    const GROUPS = [['queued', 'Queued'], ['in_progress', 'In progress'], ['completed', 'Completed'], ['failed', 'Failed']];
+    function renderBoard(tasks) {
+      put($('#task-board'), GROUPS.map(([key, label]) => {
+        const items = tasks.filter((t) => t.status_group === key);
+        return h('section', { class: `board-col g-${key}`, 'aria-label': `${label}: ${items.length}` },
+          h('h3', {}, label, ' ', h('span', { class: 'count', 'data-group': key }, items.length)),
+          items.length ? items.map((t) => h('a', { class: 'board-card', href: `/tasks/${t.task_id}` },
+            h('span', { class: 'muted' }, `#${t.task_id}`), ' ', h('strong', {}, t.title),
+            h('div', { class: 'row' }, badge(t.status), h('small', {}, `${t.run_count} run(s)`)))) : h('p', { class: 'empty' }, 'None'));
+      }));
+    }
+    const VIEW_KEY = 'devnexus.task-view';
+    function setView(view) {
+      const board = view === 'board';
+      $('#task-board').hidden = !board;
+      $('#task-table').hidden = board;
+      $('#view-board').setAttribute('aria-pressed', String(board));
+      $('#view-table').setAttribute('aria-pressed', String(!board));
+      try { localStorage.setItem(VIEW_KEY, view); } catch (_) { /* per-browser convenience only */ }
+    }
+    $('#view-table').addEventListener('click', () => setView('table'));
+    $('#view-board').addEventListener('click', () => setView('board'));
+    try { setView(localStorage.getItem(VIEW_KEY) === 'board' ? 'board' : 'table'); } catch (_) { setView('table'); }
+
     // PLAN-09: edit / approve requirements and edit project details (PATCH endpoints, contract C-3). PM only.
     function reqActions(r) {
       if (r.status !== 'Draft') return h('span', { class: 'muted' }, '—');
@@ -462,12 +489,27 @@
         const d = await api(`/api/tasks/${tid}/diff`);
         put($('#diff'), h('p', { class: 'muted' }, 'Branch ', h('code', {}, d.branch), ` → ${d.base}. Agents commit only to this feature branch; nothing is merged until deployment is authorised.`),
           d.files.length ? d.files.map((f) => h('details', { open: true }, h('summary', {}, f.path),
-            h('pre', { class: 'diff' }, f.diff.split('\n').map((line) => h('div', { class: line.startsWith('+') && !line.startsWith('+++') ? 'add' : line.startsWith('-') && !line.startsWith('---') ? 'del' : line.startsWith('@@') || line.startsWith('---') || line.startsWith('+++') ? 'meta' : '' }, line || ' '))))) : empty('No differences against main (already merged).'));
+            h('pre', { class: 'diff numbered' }, diffRows(f.diff).map(([kind, oldNo, newNo, text]) =>
+              h('div', { class: kind }, h('span', { class: 'ln', 'aria-hidden': 'true' }, oldNo), h('span', { class: 'ln', 'aria-hidden': 'true' }, newNo), h('span', { class: 'code' }, text || ' ')))))) : empty('No differences against main (already merged).'));
       } catch (e) {
         put($('#diff'), empty(e.message));
       }
     }
 
+    // PLAN-11: one-click rejection comments. They only fill the textarea; the developer still reviews and submits.
+    const REJECT_TEMPLATES = [
+      'Does not meet the requirement: ',
+      'Add input validation for empty or malformed payloads.',
+      'Handle errors explicitly instead of failing silently.',
+      'Add or strengthen tests for this behaviour.',
+      'Simplify: the code is longer than it needs to be.',
+    ];
+    put($('#reject-templates'), REJECT_TEMPLATES.map((text) => h('button', { type: 'button', class: 'secondary small', onclick: () => {
+      const box = $('#reject-form').comments;
+      box.value = box.value.trim() ? `${box.value.trim()}\n${text}` : text;
+      box.focus();
+      box.setSelectionRange(box.value.length, box.value.length);
+    } }, text.replace(/: $/, '…'))));
     $('#reject-cancel').addEventListener('click', () => ($('#reject-form').hidden = true));
     $('#reject-form').addEventListener('submit', (ev) => {
       ev.preventDefault();
@@ -480,6 +522,24 @@
       });
     });
     await load();
+  }
+
+  // Unified diff -> [kind, oldLineNo, newLineNo, text] rows (PLAN-11). Header lines carry no numbers.
+  function diffRows(diff) {
+    let oldNo = 0;
+    let newNo = 0;
+    return diff.split('\n').map((line) => {
+      const hunk = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
+      if (hunk) {
+        oldNo = Number(hunk[1]);
+        newNo = Number(hunk[2]);
+        return ['meta', '', '', line];
+      }
+      if (line.startsWith('---') || line.startsWith('+++')) return ['meta', '', '', line];
+      if (line.startsWith('+')) return ['add', '', newNo++, line];
+      if (line.startsWith('-')) return ['del', oldNo++, '', line];
+      return ['', oldNo++, newNo++, line];
+    });
   }
 
   // ---------- reports (FR-10, FR-11) ----------

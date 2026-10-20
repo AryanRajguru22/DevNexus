@@ -122,6 +122,24 @@ tr:last-child td { border-bottom: none; }
 details summary { cursor: pointer; font-weight: 600; }
 .unread td:first-child { border-left: 4px solid var(--green-500); }
 
+/* PLAN-11: table/board toggle, task board, numbered diff, rejection templates */
+.segmented { display: inline-flex; } .segmented button { border-radius: 0; } .segmented button + button { margin-left: -1px; }
+.segmented button:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); } .segmented button:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.segmented button[aria-pressed="true"] { background: var(--green-600); color: var(--white); }
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.board-col { background: var(--slate-100); border-radius: var(--radius-md); padding: var(--space-2); display: grid; gap: var(--space-2); align-content: start; border-top: 3px solid var(--slate-300); }
+.board-col.g-in_progress { border-top-color: var(--blue-600); } .board-col.g-completed { border-top-color: var(--green-600); } .board-col.g-failed { border-top-color: var(--red-600); }
+.board-col h3 { font-size: .9rem; margin: 0; display: flex; justify-content: space-between; }
+.board-col .count { background: var(--white); border-radius: 999px; padding: 0 .5rem; font-size: .8rem; }
+.board-col .empty { padding: var(--space-2) 0; font-size: .85rem; margin: 0; }
+.board-card { display: grid; gap: var(--space-1); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-2); color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.board-card:hover { border-color: var(--green-600); }
+.diff.numbered > div { display: grid; grid-template-columns: 2.5rem 2.5rem minmax(0, 1fr); }
+.diff .ln { color: var(--muted); text-align: right; padding-right: var(--space-2); user-select: none; border-right: 1px solid rgba(255, 255, 255, .08); }
+.diff .ln + .ln { margin-right: var(--space-2); }
+.diff .code { white-space: pre; }
+.templates { gap: var(--space-2); margin-top: var(--space-1); }
+
 /* Getting-started checklist (PLAN-10, NFR-7): built from API data, hidden once every step is done. */
 .checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 .checklist li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--space-2); align-items: start; }
@@ -135,12 +153,13 @@ details summary { cursor: pointer; font-weight: 600; }
 @media (max-width: 860px) {
   .grid.cols-4, .grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid.cols-2 { grid-template-columns: minmax(0, 1fr); }
+  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .form-grid { grid-template-columns: minmax(0, 1fr); }
   .nav-toggle { display: inline-block; margin-left: auto; }
   .nav { display: none; flex-basis: 100%; flex-direction: column; } .nav.open { display: flex; }
 }
 @media (max-width: 520px) {
-  .grid.cols-4, .grid.cols-3 { grid-template-columns: minmax(0, 1fr); }
+  .grid.cols-4, .grid.cols-3, .board { grid-template-columns: minmax(0, 1fr); }
   .user-switch { flex-basis: 100%; } .user-switch select { flex: 1; max-width: none; }
   .container { padding-left: var(--space-3); padding-right: var(--space-3); }
 }

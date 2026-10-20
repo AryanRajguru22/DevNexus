@@ -10,7 +10,9 @@
   <h2>Actions</h2>
   <div class="row" id="actions"></div>
   <form id="reject-form" class="form-grid" hidden>
-    <label class="field full">Reason for rejection (sent to the agent as rework feedback)<textarea name="comments" required rows="2" maxlength="2000"></textarea></label>
+    <div class="full"><span class="hint">Quick comments (click to add):</span>
+      <div class="row templates" id="reject-templates"></div></div>
+    <label class="field full">Reason for rejection (sent to the agent as rework feedback)<textarea name="comments" required rows="3" maxlength="2000"></textarea></label>
     <div class="full row"><button type="submit" class="danger">Reject and send back for rework</button><button type="button" class="secondary" id="reject-cancel">Cancel</button></div>
   </form>
   <p class="muted" id="actions-note"></p>
