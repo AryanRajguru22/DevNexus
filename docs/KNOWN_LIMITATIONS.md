@@ -16,7 +16,7 @@ These are deliberate scope decisions for a laptop demo built in 1–2 weeks with
 8a. The LLM provider is chosen with `DEVNEXUS_LLM_PROVIDER`; only `mock` exists. An unknown name stops start-up with a clear message. A real provider has to be written and registered in `adapters/llm.PROVIDERS`; none is included or tested.
 
 ## Functional gaps
-9. Requirements and projects cannot be edited after creation (proposed task PLAN-08).
+9. Requirements and projects can be edited only by a PM, through `PATCH` endpoints that are an extension (E-5, contract C-3) awaiting team confirmation. An Approved requirement is locked; it cannot be moved back to Draft.
 10. Notifications are in-app only (no e-mail/push); polled every 10 s.
 11. No user administration, no QA or System Administrator actors (explicitly out of scope per Phase 3 §2), no issue-tracker integration, no pipeline-constraint enforcement beyond `max_loc`, retry limit, agent activation and delay threshold.
 12. Estimation is Basic COCOMO over task sizes (actual generated LOC, else half of `max_loc` as a planning figure). With a handful of tiny tasks it returns tiny numbers; it is a faithful application of the Phase 2 formula, not a prediction.

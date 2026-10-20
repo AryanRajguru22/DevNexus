@@ -118,6 +118,8 @@ Base path: `/api`. Roles: **PM** = project_manager, **Dev** = developer, **any**
 | `GET /api/notifications` | any | query `unread_only?` | `[Notification]` (current user's) | FR-13 |
 | `POST /api/notifications/{id}/read` (**E-4**) | any (own) | — | `Notification` | FR-13 |
 | `GET /api/audit` | any | query `action?`, `target_ref?`, `user_id?`, `agent_id?`, `limit?` (default 100, max 500) | `[AuditEntry]` newest first | FR-14 |
+| `PATCH /api/requirements/{req_id}` (**E-5**, C-3, pending confirmation) | PM | `RequirementPatch` | `Requirement` | FR-2 (extension) |
+| `PATCH /api/projects/{project_id}` (**E-5**, C-3, pending confirmation) | PM | `ProjectPatch` | `Project` | FR-1 (extension) |
 
 Web pages (HTML, no auth header — they call the API with the stored user id): `/`, `/projects`, `/projects/{id}`, `/tasks/{id}`, `/reports`, `/audit`, `/notifications`.
 
@@ -154,10 +156,11 @@ Web pages (HTML, no auth header — they call the API with the stored user id): 
 | 409 | `precondition_failed` | a required earlier result is missing (e.g. `GET /tasks/{id}/diff` before any code exists) |
 | 409 | `agent_inactive` | needed agent type not active in the project pipeline |
 | 422 | `validation_error` | schema/field errors (`details` = list of field errors); also `agent_not_assignable`, `requirement_project_mismatch` as specific codes |
+| 422 | `requirement_locked` | (E-5) a `PATCH /api/requirements/{id}` would change an Approved requirement; `details = {req_id, fields}` |
 
 ## 6. Audit actions (`audit_log.action`)
 
-Humans: `project.create`, `requirement.add`, `pipeline.configure`, `task.create`, `task.assign`, `task.approve`, `task.reject`, `task.retry`, `task.tests_rerun`, `task.deploy_authorise`, `risk_report.generate`, `access.denied` (target `endpoint:<path>`).
+Humans: `project.create`, `requirement.add`, `pipeline.configure`, `task.create`, `task.assign`, `task.approve`, `task.reject`, `task.retry`, `task.tests_rerun`, `task.deploy_authorise`, `risk_report.generate`, `requirement.update`, `project.update` (E-5; `detail` lists the changed fields), `access.denied` (target `endpoint:<path>`).
 Agents: `agent.start` / `agent.generate` / `agent.error` (code generation), `agent.test` (testing), `agent.deploy` (deployment; target `deployment:<id>`).
 Either actor: `task.retry_limit_exceeded` (a refused rework, written by whoever tried it). Approvals and rejections carry the comments in `detail`. Every row has exactly one actor.
 
@@ -246,3 +249,10 @@ Both require role `project_manager`; both write an audit row; unknown ids are `4
 |---|---|---|---|---|
 | `PATCH /api/requirements/{req_id}` | `description` (5–2000), `type`, `priority`, `status` | Only while `status = Draft` may description/type/priority change. `status` may change Draft → Approved only. An Approved requirement is locked: any content change → `422 requirement_locked` | `Requirement` | `requirement.update` |
 | `PATCH /api/projects/{project_id}` | `name`, `problem_statement`, `scope`, `objectives`, `start_date`, `end_date`, `status` (`Planning`/`Active`/`Completed`) | Same length limits as `ProjectCreate`; `end_date` ≥ `start_date` (after merging with stored values) else 422; pipeline config is changed only via `PUT .../pipeline` | `Project` | `project.update` |
+
+**Implementation (PLAN-08, branch `feat/edit-endpoints`; `tests/test_edits.py`, 34 tests).** Interpretations where the text above is silent, open for Aryan to change:
+- *"Change"* means a value that differs from the stored one. Re-sending a stored value (e.g. `{"status": "Approved"}` to an Approved requirement) is a no-op and returns 200, so a re-submitted form does not fail.
+- Unknown fields (`pipeline_config`, `manager_id`, `project_id`, …) → `422 validation_error` (`extra="forbid"`), not silently ignored.
+- `null` is refused for NOT NULL fields; for `start_date`/`end_date` it clears the date.
+- An accepted PATCH always writes one audit row, even when nothing changed (`detail = "no changes (values already stored)"`); a refused one writes none (except `access.denied`).
+- Not covered by C-3: tasks can be created from **Draft** requirements, and editing a Draft requirement changes the text the Code Generation Agent reads on the next (re)generation of its tasks. No rule added; decision for Aryan.

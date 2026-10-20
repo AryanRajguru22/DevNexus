@@ -9,7 +9,7 @@ Owner of this file: Member B (update the *Status* and *Evidence* columns wheneve
 | ID | Requirement (short) | Module / use case | Source files | Verification | Status |
 |---|---|---|---|---|---|
 | FR-1 | PM creates project with problem statement, scope, objectives | Project & Requirement Service · UC-01 | `routers/projects.py`, `models.Project`, `schemas.ProjectCreate` | `test_api_projects.py` (create, validation ×7, role refusal) | implemented |
-| FR-2 | Capture functional / non-functional requirements | same · UC-01 | `routers/projects.py`, `models.Requirement` | `test_api_projects.py` (add/list, validation ×6). Editing a requirement is not implemented (proposed PLAN-08) | implemented (create/list) |
+| FR-2 | Capture functional / non-functional requirements | same · UC-01 | `routers/projects.py`, `models.Requirement` | `test_api_projects.py` (add/list, validation ×6); editing (extension E-5, PLAN-08): `routers/edits.py`, `test_edits.py` | implemented (create/list); edit = extension pending confirmation |
 | FR-3 | Configure agent pipeline (active agents, constraints, retry limit) | Agent Orchestrator · UC-02 | `validation.PipelineConfig`, `PUT /pipeline`, `workflow` gates | `test_api_projects.py` (pipeline ×8), `test_workflow.py` (inactive agent ×5), `test_task_flows.py` | implemented |
 | FR-4 | Developer creates tasks from requirements and assigns to an agent | Project & Req. Service · UC-03 | `routers/tasks.py`, `workflow` (assign) | `test_task_flows.py` (creation rules, assignment, agent_inactive, agent_not_assignable) | implemented |
 | FR-5 | Code Generation Agent produces code from task + requirement | Code Generation Agent · UC-03 | `agents/codegen.py`, `adapters/llm.py` (mock) | `test_adapters_and_agents.py`, `test_task_flows.py` (happy path, rework, LOC limit) | partially implemented — mock LLM (D-4) |
@@ -50,4 +50,4 @@ Owner of this file: Member B (update the *Status* and *Evidence* columns wheneve
 | R1–R10 mitigations | ARCHITECTURE.md §6 |
 
 ## Not implemented (deliberately, see KNOWN_LIMITATIONS.md)
-Real LLM / second provider · GitHub/GitLab/CI integrations · TLS · PostgreSQL, gRPC, queue, containers · requirement editing · user administration, QA and Admin actors (out of scope per Phase 3) · e-mail notifications · issue-tracker integration · backups.
+Real LLM / second provider · GitHub/GitLab/CI integrations · TLS · PostgreSQL, gRPC, queue, containers · user administration, QA and Admin actors (out of scope per Phase 3) · e-mail notifications · issue-tracker integration · backups.
