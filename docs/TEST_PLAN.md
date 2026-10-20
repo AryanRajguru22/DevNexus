@@ -39,6 +39,26 @@ Bugs found by testing during construction (all fixed, regression tests added): t
 ## 3. Manual browser run (2026-10-17)
 Real server with `DEVNEXUS_MOCK_AGENT_DELAY=1.5`: created a project and requirement through the forms, switched to a Developer, created a task, assigned → watched Generating → In Review, viewed the diff, approved → Testing → Ready for Deployment, authorised deployment → Deployed; dashboard showed 100% progress, 1 task, simulated 100% coverage, velocity bar in the current sprint; reports page showed the COCOMO figures and the Phase 2 baseline. No console errors on the projects page. `scripts/demo_seed.py` populated a second database through the API (5 tasks in 5 different states).
 
+### 3.1 Browser smoke checklist (PLAN-12)
+Run before every demo and after any UI change. Start the server, run `scripts/demo_seed.py` once, then:
+
+| # | Check | Pass when |
+|---|---|---|
+| 1 | Open all 7 pages as PM and as Developer | data loads, no error toast, no console error |
+| 2 | Resize to 1280, 768 and 360 px | no sideways scroll on any page; nav collapses to ☰ below 860 px |
+| 3 | As PM, create a project through the form | redirected to the new project page |
+| 4 | As PM, add a Draft requirement, Edit it, then Approve it | row shows "Approved · locked" with no buttons; Edit details saves the project; an end date before the start date shows an error toast |
+| 5 | Switch to a Developer | no project form, pipeline read-only, no requirement buttons; task form visible |
+| 6 | Create a task and assign it | page refreshes on its own to *In Review*; diff has line numbers |
+| 7 | Reject using a quick comment, then Approve, then Authorise deployment | 2 agent runs; comment in History; status ends *Deployed* |
+| 8 | Toggle Table / Board on the project page | board column counts equal the table's status-group counts |
+| 9 | Notifications: Mark read | row loses its marker; bell count drops by 1 |
+| 10 | Dashboard on a fresh database | Getting started shows 0/7 and ticks as steps 3–7 happen; Hide keeps it hidden after reload |
+
+**Executed 2026-10-20 (Member C, branch `test/ui-structure`, Linux / CachyOS, Python 3.14.7, Chromium headless via Playwright 1.64.0).** These checks were *scripted in a headless browser against a running server*, not clicked by a person. All 10 passed:
+1–2: 10 URLs × 2 roles × 3 widths = 60 views, no console/page errors, no horizontal scroll (before PLAN-10: 22 of 60 views overflowed). 3, 5–7, 9: forms-only run on an empty database (no API shortcuts) passed; bell 4 → 3. 4: edit, approve, lock, date-error toast and Developer view verified, with API state checked after each step. 8: board = table = API counts (queued 1, in progress 2, completed 1, failed 1). 10: 0/7 → 7/7 through real actions; Hide survives reload.
+Not covered: Windows/macOS browsers, real touch devices, screen readers, and a first-time human user (NFR-7 timing remains PLAN-19).
+
 ## 4. Requirement → test map
 See REQUIREMENTS_TRACEABILITY.md (Verification column). Member B keeps the *Evidence* cells current (proposed task PLAN-21).
 
