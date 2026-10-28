@@ -206,11 +206,6 @@ def test_deployment_agent_crash_is_recorded_as_failed_and_the_task_stays_ready(b
     assert snapshot(rt, tid)["status"] == "Deployed"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,  # only the rollback assertion may fail; any other error is a real test failure
-    reason="M-2, issue #16 (TEST_PLAN 5.2): DeploymentAgent rolls back only when CI/CD returns a failure, not when it raises",
-)
 def test_ci_runner_raising_after_the_merge_leaves_main_restored(settings):
     app = create_app(replace(settings, recover_on_startup=False), cicd=ExplodingCICD())
     try:

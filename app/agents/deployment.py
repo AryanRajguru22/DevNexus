@@ -26,7 +26,14 @@ class DeploymentAgent:
 
     def deploy(self, *, project_id: int, branch: str, environment: str, hints: str, attempt: int) -> DeployResult:
         snapshot = self.git.merge_to_main(project_id, branch)
-        result = self.cicd.deploy(branch=branch, environment=environment, attempt=attempt, hints=hints)
+        try:
+            result = self.cicd.deploy(branch=branch, environment=environment, attempt=attempt, hints=hints)
+        except Exception:
+            # A runner that raises (network error, timeout, bug) must leave main exactly as it was too (issue #16);
+            # the orchestrator records the failure. Scope: this restores the mock workspace directory only - there
+            # is no real external deployment to undo.
+            self.git.rollback(project_id, snapshot)
+            raise
         if not result.succeeded:
             self.git.rollback(project_id, snapshot)  # main is restored: a failed deployment leaves no trace
             return DeployResult(False, f"{result.message}; merge rolled back")

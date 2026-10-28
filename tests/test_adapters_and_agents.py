@@ -169,3 +169,17 @@ def test_workspace_stays_inside_data_dir(git):
     git.commit(1, "feature/a", {"generated/a.py": "a = 1\n"}, "m")
     for root, _dirs, files in os.walk(git.root):
         assert str(git.root) in root
+
+
+def test_diff_lists_only_the_branchs_own_files_not_other_tasks_merged_files(git):
+    """Issue #3: files merged to main by other tasks must not show up as deletions in this branch's diff."""
+    git.commit(1, "feature/a", {"generated/a.py": "a = 1\n"}, "m")
+    git.merge_to_main(1, "feature/a")
+    git.commit(1, "feature/b", {"generated/b.py": "b = 2\n"}, "m")
+    diff = git.diff(1, "feature/b")
+    assert [d["path"] for d in diff] == ["generated/b.py"]
+    assert "+b = 2" in diff[0]["diff"] and "-a = 1" not in diff[0]["diff"]
+    # a branch file that changes a path already on main is still a real modification
+    git.commit(1, "feature/c", {"generated/a.py": "a = 1\na2 = 2\n"}, "m")
+    changed = git.diff(1, "feature/c")
+    assert [d["path"] for d in changed] == ["generated/a.py"] and "+a2 = 2" in changed[0]["diff"]

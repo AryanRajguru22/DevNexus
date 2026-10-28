@@ -355,3 +355,18 @@ def test_timestamps_are_utc_iso_with_a_single_z(api, setup):
     for value in (t["created_at"], t["status_changed_at"], t["history"][0]["timestamp"]):
         assert value.endswith("Z") and "+" not in value and value.count("Z") == 1
         __import__("datetime").datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def test_review_diff_ignores_files_merged_by_other_tasks(api, client, setup):
+    """Issue #3, end to end: after task 1 is deployed, task 2's diff shows only task 2's file, none deleted."""
+    project, req = setup
+    pid = project["project_id"]
+    first = api.task(pid, req["req_id"], title="Build login API")["task_id"]
+    advance_to(api, first, "Deployed")
+    second = api.task(pid, req["req_id"], title="Export grades")["task_id"]
+    api.post(f"/api/tasks/{second}/assign")
+    diff = client.get(f"/api/tasks/{second}/diff", headers=DEV).json()
+    assert len(diff["files"]) == 1
+    only = diff["files"][0]
+    assert "export_grades" in only["path"] and "build_login_api" not in only["path"]
+    assert not any(line.startswith("-") and not line.startswith("---") for line in only["diff"].splitlines())

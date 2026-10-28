@@ -81,10 +81,17 @@ class LocalGitAdapter:
         return self._read_tree(self._main_dir(project_id))
 
     def diff(self, project_id: int, branch: str) -> list[dict[str, str]]:
-        """Unified diff of the feature branch against main (UC-05 step 2)."""
+        """Unified diff of the feature branch against main (UC-05 step 2).
+
+        A feature branch is an *overlay*: it holds only the files its own task committed, and merge_to_main()
+        only adds or overwrites files, never deletes. So the change set of a branch is exactly the paths it
+        contains, compared with main's version of those paths (a missing one is a new file). Files that exist
+        only on main were merged by other tasks; they are not part of this branch and must not appear as
+        deletions (issue #3).
+        """
         base, head = self.read_main(project_id), self.read_branch(project_id, branch)
         out = []
-        for path in sorted(set(base) | set(head)):
+        for path in sorted(head):
             if base.get(path) == head.get(path):
                 continue
             lines = difflib.unified_diff(
