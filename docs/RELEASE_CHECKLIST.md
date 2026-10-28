@@ -8,7 +8,7 @@ Branch `release/rc1` (local integration branch; see "Git / GitHub state"). Every
 |---|---|---|
 | Edit endpoints for requirements/projects (`PATCH`, PM only, approved requirements locked) | PR #11 (PLAN-08) | `tests/test_edits.py` (34) |
 | Edit / approve UI | PR #12 (PLAN-09) | `tests/test_ui_pages.py` |
-| Design tokens, responsive fixes, getting-started checklist; claims to fix UI issues #1, #2, #4-#9 | PR #13 (PLAN-10) | checked: no horizontal overflow and no console errors on 7 pages at 1280/768/360 px (CDP run); #4 wording confirmed in the diff |
+| Design tokens, responsive fixes, getting-started checklist; claims to fix UI issues #1, #2, #4-#9 | PR #13 (PLAN-10) | checked in headless Chrome (PM and Developer views): no overflow, no console errors; #1-#4, #7-#9 seen on screenshots; #5/#6 only measured, not individually inspected |
 | Task board, diff line numbers, reject templates (P2, text-node DOM only, no `innerHTML`) | PR #14 (PLAN-11) | kept: small, tested, and PR #15 sits on top of it |
 | UI structure tests + smoke checklist | PR #15 (PLAN-12) | `tests/test_ui_pages.py` (52) |
 | Orchestrator edge/crash tests | PR #17 (PLAN-07) | `tests/test_orchestrator_edges.py` (10) |
@@ -40,11 +40,11 @@ Branch `release/rc1` (local integration branch; see "Git / GitHub state"). Every
 SQLite, SQLAlchemy 2.x, **11 model classes / 11 tables**: `User`(user), `Agent`(agent), `Project`(project), `Requirement`(requirement), `Task`(task), `AgentRun`(agent_run), `TestResult`(test_result), `Deployment`(deployment), `RiskReport`(risk_report), `Notification`(notification), `AuditLog`(audit_log). Details and responsibilities: `docs/ARCHITECTURE.md` §4a. No migrations; reset = stop server, delete `data/` (demo data only).
 
 ## 5. Release checklist
-- [x] Fresh venv + `pip install -r requirements.txt` + `pytest`: 387 passed, 99% (2026-10-28)
+- [x] Fresh venv + `pip install -r requirements.txt` + `pytest`: 387 passed, 99% (2026-10-28); repeated from a fresh `git clone` of `release/rc1` (`efcf1f3`): 387 passed, and `python -m app` + `scripts/e2e_check.py` 34/34 from the clone
 - [x] `python -m app` starts; `/api/health` ok; all 7 pages render
 - [x] `python scripts/e2e_check.py` 34/34
 - [x] Kill the server mid-generation, restart: run closed as failed, task recovered, data persisted
-- [x] 1280 / 768 / 360 px: no horizontal overflow, no console errors (7 pages)
+- [x] 1280 / 768 / 360 px as PM, 1280 / 360 px as Developer: no horizontal overflow, no console errors; #1-#4, #7-#9 confirmed by screenshot (#5, #6 only by the overflow measurement); keyboard/screen-reader checks **not done**
 - [x] Mock provider path verified separately from Ollama (all 387 tests and `e2e_check.py` use the mock)
 - [x] Ollama installed (E:\Ollama, models in E:\ollama-models), `qwen2.5-coder:1.5b` pulled, real inference + app smoke + provider-down path verified (details: KNOWN_LIMITATIONS 8a)
 - [ ] First-time-user usability timing (NFR-7) - not measured

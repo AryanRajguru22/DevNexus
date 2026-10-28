@@ -45,31 +45,15 @@ Kill-and-restart (real server, mock agent delay 20 s, process killed while *Gene
 
 Bugs found by testing during construction (all fixed, regression tests added): timestamps serialised as `…+00:00Z` (UI showed "Invalid Date"); `[hidden]` overridden by CSS `display:grid`; `ev.currentTarget` null after `await` in form handlers (found by driving the real UI in a browser).
 
-## 3. Manual browser run (2026-10-17)
-Real server with `DEVNEXUS_MOCK_AGENT_DELAY=1.5`: created a project and requirement through the forms, switched to a Developer, created a task, assigned → watched Generating → In Review, viewed the diff, approved → Testing → Ready for Deployment, authorised deployment → Deployed; dashboard showed 100% progress, 1 task, simulated 100% coverage, velocity bar in the current sprint; reports page showed the COCOMO figures and the Phase 2 baseline. No console errors on the projects page. `scripts/demo_seed.py` populated a second database through the API (5 tasks in 5 different states).
+## 3. Browser / UI evidence
 
-### 3.1 Browser smoke checklist (PLAN-12)
-Run before every demo and after any UI change. Start the server, run `scripts/demo_seed.py` once, then:
+**2026-10-28 (release candidate, headless Chrome driven over the DevTools protocol, device-metrics emulation):** 7 pages (`/`, `/projects`, `/projects/1`, `/tasks/N`, `/reports`, `/audit`, `/notifications`) as Project Manager at 1280, 768 and 360 px, and as Developer at 1280 and 360 px (dashboard, project page, an In Review, a Failed and a freshly generated task): **no horizontal page overflow, no console errors**. Screenshots read by eye: hamburger menu at 360 px; user switcher fits and does not repeat the role (#1, #7); Failed task shows the single true reason "retry limit is reached, so this task is reported as a risk" (#4); create-task form is separated from the task table (#8); wide tables scroll inside their own card (`.table-wrap`) instead of scrolling the page (#2, #9); review page shows Approve/Reject, line-numbered diff containing only the task's own file (#3 and PLAN-11). Not individually inspected: #5 (status badge at 360 px on the dashboard) and #6 (group badge) beyond the overflow measurement.
+**Not covered:** keyboard-only navigation and screen readers (not tested), real touch devices, Firefox/Safari, a first-time human user (NFR-7). The Chrome extension was not connected, so the interactive click-through of 2026-10-17 was not repeated; the same journeys were driven through the real HTTP API by `scripts/e2e_check.py`.
 
-| # | Check | Pass when |
-|---|---|---|
-| 1 | Open all 7 pages as PM and as Developer | data loads, no error toast, no console error |
-| 2 | Resize to 1280, 768 and 360 px | no sideways scroll on any page; nav collapses to ☰ below 860 px |
-| 3 | As PM, create a project through the form | redirected to the new project page |
-| 4 | As PM, add a Draft requirement, Edit it, then Approve it | row shows "Approved · locked" with no buttons; Edit details saves the project; an end date before the start date shows an error toast |
-| 5 | Switch to a Developer | no project form, pipeline read-only, no requirement buttons; task form visible |
-| 6 | Create a task and assign it | page refreshes on its own to *In Review*; diff has line numbers |
-| 7 | Reject using a quick comment, then Approve, then Authorise deployment | 2 agent runs; comment in History; status ends *Deployed* |
-| 8 | Toggle Table / Board on the project page | board column counts equal the table's status-group counts |
-| 9 | Notifications: Mark read | row loses its marker; bell count drops by 1 |
-| 10 | Dashboard on a fresh database | Getting started shows 0/7 and ticks as steps 3–7 happen; Hide keeps it hidden after reload |
-
-**Executed 2026-10-20 (Member C, branch `test/ui-structure`, Linux / CachyOS, Python 3.14.7, Chromium headless via Playwright 1.64.0).** These checks were *scripted in a headless browser against a running server*, not clicked by a person. All 10 passed:
-1–2: 10 URLs × 2 roles × 3 widths = 60 views, no console/page errors, no horizontal scroll (before PLAN-10: 22 of 60 views overflowed). 3, 5–7, 9: forms-only run on an empty database (no API shortcuts) passed; bell 4 → 3. 4: edit, approve, lock, date-error toast and Developer view verified, with API state checked after each step. 8: board = table = API counts (queued 1, in progress 2, completed 1, failed 1). 10: 0/7 → 7/7 through real actions; Hide survives reload.
-Not covered: Windows/macOS browsers, real touch devices, screen readers, and a first-time human user (NFR-7 timing remains PLAN-19).
+Earlier manual run (2026-10-17, interactive browser): project and requirement created through the forms, task assigned → In Review → approved → Ready → deployed; dashboard 100%, velocity bar, COCOMO page; no console errors.
 
 ## 4. Requirement → test map
-See REQUIREMENTS_TRACEABILITY.md (Verification column). Member B keeps the *Evidence* cells current (proposed task PLAN-21).
+See REQUIREMENTS_TRACEABILITY.md (Verification column). Member B keeps the *Evidence* cells current .
 
 ## 5. Workflow conformance (checked against the Phase 3 PDF, 2026-10-28)
 
@@ -102,9 +86,9 @@ Any other (state, event) pair → 409 `invalid_transition` (tests: `test_every_o
 | NFR-1 | assign → In Review time with mock provider | < 1 s (real LLM not measured) |
 | NFR-2 | dashboard request with 50 tasks | < 5 s asserted; typically tens of ms |
 | NFR-5 | restart keeps tasks, history, users; interrupted jobs are re-run | passes; real server killed mid-generation (`taskkill /F`) → on restart the run is closed as failed, a new run completes, task reaches In Review; a second restart changes nothing (2026-10-20) |
-| End-to-end (HTTP) | 69 checks against a real server: project/requirement/pipeline → task → assign → diff → reject/rework → approve → tests → deploy; role refusals; invalid transitions; `[fail-tests]`, `[fail-llm]`, `[fail-llm-always]` retry limit, `[fail-deploy]`; dashboard/estimation on empty and populated projects; hard restart persistence | 69/69 passed (2026-10-20). Script not committed. Browser (visual) pass **not done** on 2026-10-20: the Chrome extension was not connected |
+| End-to-end (HTTP) | `scripts/e2e_check.py` (committed): 34 checks against a real server - pages, project/requirement create + edit + lock, role refusals, assign → generate → diff (only own files) → reject/rework → approve → tests → deploy, `[fail-tests]`, `[fail-llm-always]` retry limit, `[fail-deploy]` then success, audit, notifications, dashboard, COCOMO, risk report, invalid state / input / 404 | 34/34 passed on 2026-10-28, both in the working tree and in a fresh `git clone` of `release/rc1` (commit `efcf1f3`) using a fresh venv |
 | NFR-6 | commit to main/master, `..` paths, bad branch names refused; failed deploy restores main | passes |
-| NFR-7 | first-time PM < 10 min | **not yet measured** (PLAN-19) |
+| NFR-7 | first-time PM < 10 min | **not measured** |
 | NFR-8 | 50 tasks created + assigned in one project | passes (sequential) |
 | NFR-4, 9, 10 | — | deferred/partial, see KNOWN_LIMITATIONS.md |
 
