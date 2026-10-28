@@ -60,11 +60,31 @@ Principles carried over from the design: low coupling (routers → services → 
 4. **Authorisation recorded before action**: deployment writes `task.deploy_authorise` *before* the Deployment Agent runs, so a failed deployment still shows who authorised it; main is restored (rollback) and the task stays *Ready for Deployment* (UC-07 alt 3a).
 5. **NFR-6 enforced in code, not by convention**: `LocalGitAdapter.commit` refuses `main`/`master`; path traversal and invalid branch names are rejected; tested.
 6. **Everything on screen is computed**: the dashboard/estimation/risk numbers are queries over persisted rows, with Phase 2 constants (COCOMO 2.4/1.05/2.5/0.38, ₹60,000, risk bands). Simulated values are labelled.
-7. **Agents are replaceable** (NFR-9/10 partial): `LLMProvider`, `GitAdapter`, `CICDAdapter` are small interfaces; a real provider can be added without touching routers or workflow.
+7. **Agents are replaceable** (NFR-9/10 partial): `LLMProvider`, `GitAdapter`, `CICDAdapter` are small interfaces; a provider is added by registering a factory in `adapters/llm.PROVIDERS` without touching routers or workflow. `mock` (default) and `ollama` (optional local model, `adapters/ollama.py`, stdlib HTTP, every failure mapped to a clean *Failed* task) exist today.
+
+## 4a. Database (SQLite via SQLAlchemy 2.x; derived from `app/models.py`)
+
+**11 model classes / 11 tables** (`Base.metadata.create_all` at start-up; there are *no migrations*: after a schema change, stop the server and delete `data/` - demo data only):
+
+| Class | Table | Responsibility |
+|---|---|---|
+| `User` | `user` | demo identities with a role (Project Manager / Developer) |
+| `Agent` | `agent` | the three AI agent types (code generation, testing, deployment) |
+| `Project` | `project` | project definition + `pipeline_config` JSON (active agents, retry limit, constraints) |
+| `Requirement` | `requirement` | functional / non-functional requirements of a project (Draft → Approved, then locked) |
+| `Task` | `task` | unit of work and its 8-state status (the workflow table changes it) |
+| `AgentRun` | `agent_run` | one execution of an agent on a task (branch, status, error, LOC) |
+| `TestResult` | `test_result` | simulated pass/fail counts and coverage of a run |
+| `Deployment` | `deployment` | one deployment attempt of a run (succeeded / failed) |
+| `RiskReport` | `risk_report` | stored project risk assessment |
+| `Notification` | `notification` | in-app notifications (extension D-7 to the Phase 3 E-R) |
+| `AuditLog` | `audit_log` | append-only trail (DB triggers refuse UPDATE/DELETE; exactly one actor per row) |
+
+*Models vs schemas*: `models.py` classes are the persisted tables (SQLAlchemy); `schemas.py` classes are the Pydantic request/response documents of the REST API - a model is never returned to a client directly.
 
 ## 5. Runtime & configuration
 
-`python -m app` → http://127.0.0.1:8000 (API docs at `/docs`). Environment variables: `DEVNEXUS_DATA_DIR` (default `./data`), `DEVNEXUS_DATABASE_URL`, `DEVNEXUS_MOCK_AGENT_DELAY` (seconds; makes *Generating/Testing* visible in a demo), `DEVNEXUS_SEED_DEMO_USERS` (default 1), `DEVNEXUS_LLM_PROVIDER` (default `mock`), `DEVNEXUS_RECOVER_ON_STARTUP` (default 1), `DEVNEXUS_HOST`, `DEVNEXUS_PORT`. Nothing sensitive is stored; no secrets exist in the MVP.
+`python -m app` → http://127.0.0.1:8000 (API docs at `/docs`). Environment variables: `DEVNEXUS_DATA_DIR` (default `./data`), `DEVNEXUS_DATABASE_URL`, `DEVNEXUS_MOCK_AGENT_DELAY` (seconds; makes *Generating/Testing* visible in a demo), `DEVNEXUS_SEED_DEMO_USERS` (default 1), `DEVNEXUS_LLM_PROVIDER` (`mock` default | `ollama`), `DEVNEXUS_OLLAMA_URL` / `_MODEL` / `_TIMEOUT` (only for `ollama`), `DEVNEXUS_RECOVER_ON_STARTUP` (default 1), `DEVNEXUS_HOST`, `DEVNEXUS_PORT`. Nothing sensitive is stored; no secrets exist in the MVP.
 
 ## 6. Risk mapping (Phase 2 R1–R10)
 

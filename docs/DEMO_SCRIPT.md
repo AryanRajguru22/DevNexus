@@ -1,4 +1,4 @@
-# Demo Script (≈ 10 minutes)
+# Demo Script (8-10 minutes)
 
 **Setup (before the audience arrives)** — from the repo root with the venv active:
 ```
@@ -6,6 +6,10 @@ set DEVNEXUS_MOCK_AGENT_DELAY=1.5        (PowerShell: $env:DEVNEXUS_MOCK_AGENT_D
 python -m app                             # http://127.0.0.1:8000
 python scripts/demo_seed.py               # optional: a ready-made project through the real API
 ```
+**Before you start (2 minutes, once):** `pytest -q` (387 passed) and, with the server running on a fresh `data/`, `python scripts/e2e_check.py` (34/34) - keep the output on screen as evidence for the closing slide. Always demo with the **mock** provider (`DEVNEXUS_LLM_PROVIDER` unset): it is deterministic, offline and the only one that supports the `[fail-*]` markers. Show Ollama (README) only as a bonus *after* the main demo and only if you verified it on this laptop that day.
+
+**Timing guide:** problem + architecture 2 min · steps 1-10 below 4 min · failure paths B.1 and B.4 1 min · intelligence 1 min · recovery + duplicate-job note 30 s (say it; the kill-restart demo is optional: start with `DEVNEXUS_MOCK_AGENT_DELAY=20`, assign a task, stop the server window, start it again, open the task: *interrupted run failed, new run completed*) · evidence + limitations 1 min.
+
 Open the app. Say up front: *the agents, Git host and CI are local mock adapters; test results are simulated static checks; everything else is real and persisted.*
 
 ## A. Story (follow the Phase 3 pipeline)
@@ -40,4 +44,4 @@ Dashboard (status bars, velocity, coverage *simulated*, risk) → switch project
 - Why SQLite/one process vs PostgreSQL/microservices? → D-1/D-2 (deadline, budget, laptop).
 
 ## E. If something breaks
-Stop the server (Ctrl+C), delete the `data/` folder, restart: the schema and demo users are re-created. API docs at `/docs` are a fallback to show endpoints.
+Stop the server (Ctrl+C), delete the `data/` folder, restart: the schema and demo users are re-created (demo data only - this is a reset, not part of normal start-up). If a page looks empty, check `/api/health` and the server console. If Ollama was selected and misbehaves, restart with `DEVNEXUS_LLM_PROVIDER` unset. API docs at `/docs` are a fallback to show endpoints. Honest limitations to state: mocked AI/Git/CI, simulated tests, no real authentication, single-process SQLite.
