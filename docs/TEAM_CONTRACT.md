@@ -75,9 +75,9 @@ Implemented as a single table in `app/workflow.py`; no endpoint may set `task.st
 | `code_ready` | Generating → In Review | code-generation agent | code committed to a feature branch |
 | `agent_error` | Generating → Failed | code-generation agent | — |
 | `approve` | In Review → Testing | developer | `testing` active in pipeline |
-| `reject` | In Review → Generating | developer | non-empty comments; rework allowed |
+| `reject` | In Review → Generating | developer | non-empty comments (checked at the API); `code_generation` active (else `agent_inactive`); rework allowed |
 | `tests_passed` | Testing → Ready for Deployment | testing agent | — |
-| `tests_failed` | Testing → Generating | testing agent | rework allowed |
+| `tests_failed` | Testing → Generating | testing agent | `code_generation` active; rework allowed (when refused the task stays in Testing, see below) |
 | `authorise_deployment` | Ready for Deployment → Deployed | developer **or** project_manager | `deployment` active; deployment run succeeded |
 | `retry` | Failed → Assigned | developer | rework allowed; `code_generation` active |
 

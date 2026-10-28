@@ -132,6 +132,7 @@ def test_wrong_actor_is_forbidden(db, make_task, event, wrong_actor):
         ("assign", "Created", "code_generation"),
         ("approve", "In Review", "testing"),
         ("reject", "In Review", "code_generation"),
+        ("tests_failed", "Testing", "code_generation"),  # rework re-enters Generating, so generation must be active
         ("authorise_deployment", "Ready for Deployment", "deployment"),
         ("retry", "Failed", "code_generation"),
     ],
