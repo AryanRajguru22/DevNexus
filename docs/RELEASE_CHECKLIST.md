@@ -45,7 +45,8 @@ SQLite, SQLAlchemy 2.x, **11 model classes / 11 tables**: `User`(user), `Agent`(
 - [x] `python scripts/e2e_check.py` 34/34
 - [x] Kill the server mid-generation, restart: run closed as failed, task recovered, data persisted
 - [x] 1280 / 768 / 360 px: no horizontal overflow, no console errors (7 pages)
-- [x] Mock provider path verified separately from Ollama
+- [x] Mock provider path verified separately from Ollama (all 387 tests and `e2e_check.py` use the mock)
+- [x] Ollama installed (E:\Ollama, models in E:\ollama-models), `qwen2.5-coder:1.5b` pulled, real inference + app smoke + provider-down path verified (details: KNOWN_LIMITATIONS 8a)
 - [ ] First-time-user usability timing (NFR-7) - not measured
 - [ ] Linux / macOS re-run on the release candidate - not done
 - [ ] Push `release/rc1`, open/merge the PR, tag `v1.0` - **owner action**
