@@ -98,9 +98,16 @@ class MockLLMProvider:
         )
 
 
-# Extension point: a real provider is added by registering a zero-argument factory here (it must read its own
-# credentials from the environment). Only the mock is built in; no paid service is needed to run or test DevNexus.
-PROVIDERS: dict[str, Callable[[], LLMProvider]] = {"mock": MockLLMProvider}
+def _ollama() -> LLMProvider:
+    from .ollama import OllamaLLMProvider  # imported lazily: ollama.py imports names from this module
+
+    return OllamaLLMProvider.from_environment()
+
+
+# Extension point: a provider is added by registering a zero-argument factory here (it must read its own settings
+# from the environment). "mock" is the default and needs nothing; "ollama" talks to a local Ollama server and is
+# optional. No paid service or API key is needed to run or test DevNexus.
+PROVIDERS: dict[str, Callable[[], LLMProvider]] = {"mock": MockLLMProvider, "ollama": _ollama}
 
 
 def create_provider(name: str) -> LLMProvider:
