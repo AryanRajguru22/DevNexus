@@ -23,9 +23,9 @@ Branch `release/rc1` (local integration branch; see "Git / GitHub state"). Every
 * **#16** - `DeploymentAgent.deploy` merged first and rolled back only when the runner *returned* a failure. A raising runner skipped the rollback while the orchestrator still recorded the failure. The agent now rolls back and re-raises. Scope: this restores the *mock workspace directory*; there is no real deployment.
 
 ## 2. Git / GitHub state (verify, do not assume)
-* `main` and `origin/main` = `f5364a0`. No PR has been merged on GitHub by this work; `gh` is not installed and nothing was pushed.
+* `main` and `origin/main` = `f5364a0`. No PR has been merged on GitHub by this work; `gh` is not installed. `release/rc1` was pushed to `origin` as a **new branch** (owner-approved, no force, `main` untouched); no PR has been opened from it yet.
 * Open PRs on GitHub (as read from the API on 2026-10-28): #11 → #12 → #13 → #14 → #15 (stacked, each based on the previous branch) and #17 (based on `main`). All showed `mergeable: clean` for #11-#14; #15/#17 not re-queried (API rate limit).
-* `release/rc1` = `main` + fast-forward of the whole #11-#15 stack + merge of #17 + fix commits. To publish: push `release/rc1`, open one PR to `main`, and close #11-#15/#17 as superseded **or** merge them in stack order first and then rebase the fix commits. This needs the owner's decision and was not done.
+* `origin/release/rc1` = `main` + fast-forward of the whole #11-#15 stack + merge of #17 + fix commits. To publish: open one PR `release/rc1` → `main` (https://github.com/AryanRajguru22/DevNexus/pull/new/release/rc1) and close #11-#15/#17 as superseded **or** merge them in stack order first and then rebase the fix commits. This needs the owner's decision and was not done.
 * Issue states on GitHub are unchanged. Fixed by this branch: #3, #16 and (per PR #13's own description and our checks) #1, #2, #4-#9.
 * Not available to this work: Member B's uncommitted PLAN-03 conformance table; Member B's macOS evidence (reported only).
 
@@ -49,7 +49,8 @@ SQLite, SQLAlchemy 2.x, **11 model classes / 11 tables**: `User`(user), `Agent`(
 - [x] Ollama installed (E:\Ollama, models in E:\ollama-models), `qwen2.5-coder:1.5b` pulled, real inference + app smoke + provider-down path verified (details: KNOWN_LIMITATIONS 8a)
 - [ ] First-time-user usability timing (NFR-7) - not measured
 - [ ] Linux / macOS re-run on the release candidate - not done
-- [ ] Push `release/rc1`, open/merge the PR, tag `v1.0` - **owner action**
+- [x] `release/rc1` pushed to origin (new branch)
+- [ ] Open/merge the PR to `main`, tag `v1.0` - **owner action**
 - [ ] Rehearse `docs/DEMO_SCRIPT.md` twice on the demo laptop
 
 ## 6. Troubleshooting
